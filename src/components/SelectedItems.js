@@ -83,7 +83,7 @@ function SelectedItems({
           </div>
         </div>
       )}
-      <a className='link selected-list' target="_blank" href="https://zozostudio2011-bot.github.io/test/">Trang convert file</a>
+      <a className='link selected-list' target="_blank" rel="noreferrer" href="https://zozostudio2011-bot.github.io/test/">Trang convert file</a>
     </div>
   );
 }
