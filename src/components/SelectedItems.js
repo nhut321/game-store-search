@@ -30,7 +30,7 @@ function SelectedItems({
         </button>
       </div>
 
-      <div className="selected-list">
+      {/* <div className="selected-list">
         {items.length === 0 ? (
           <div className="empty-message">
             Chưa chọn item nào
@@ -69,7 +69,7 @@ function SelectedItems({
             </tbody>
           </table>
         )}
-      </div>
+      </div> */}
 
       {items.length > 0 && (
         <div className="file-names-preview">
@@ -83,6 +83,7 @@ function SelectedItems({
           </div>
         </div>
       )}
+      <a className='link selected-list' target="_blank" href="https://zozostudio2011-bot.github.io/test/">Trang convert file</a>
     </div>
   );
 }
