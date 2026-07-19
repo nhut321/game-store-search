@@ -1,5 +1,6 @@
 {
   "name": "game-store-search",
+  "proxy": "https://aumix3d.com",
   "version": "1.0.0",
   "private": true,
   "dependencies": {

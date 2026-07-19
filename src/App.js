@@ -66,17 +66,37 @@ function App() {
     }
   }, [gender, server]);
 
+  const handleGenderChange = (newGender) => {
+    setGender(newGender);
+    setSelectedItems([]); // Xoá tất cả item
+  };
+
   const handleSelectItem = useCallback((item) => {
     const itemExists = selectedItems.some(
       (selected) => selected.fileName === item.fileName
     );
 
     if (itemExists) {
+      // Nếu đã chọn rồi, bỏ chọn
       setSelectedItems(selectedItems.filter(
         (selected) => selected.fileName !== item.fileName
       ));
     } else {
-      setSelectedItems([...selectedItems, item]);
+      // Nếu chưa chọn, kiểm tra xem có item với part này chưa
+      const hasSamePart = selectedItems.some(
+        (selected) => selected.part === item.part
+      );
+
+      if (hasSamePart) {
+        // Nếu đã có item với part này, thay thế nó
+        const updatedItems = selectedItems.filter(
+          (selected) => selected.part !== item.part
+        );
+        setSelectedItems([...updatedItems, item]);
+      } else {
+        // Nếu chưa có, thêm mới
+        setSelectedItems([...selectedItems, item]);
+      }
     }
   }, [selectedItems]);
 
@@ -86,11 +106,7 @@ function App() {
 
   const handleCopyFileNames = useCallback(() => {
     const fileNames = selectedItems.map((item) => item.fileName).join('\n');
-    navigator.clipboard.writeText(fileNames).then(() => {
-      alert('✅ Đã copy tất cả fileName!');
-    }).catch((err) => {
-      console.error('Lỗi khi copy:', err);
-    });
+    navigator.clipboard.writeText(fileNames);
   }, [selectedItems]);
 
   const handleClearSelected = useCallback(() => {
@@ -112,7 +128,7 @@ function App() {
           <div className="left-section">
             <SearchForm
               gender={gender}
-              setGender={setGender}
+              setGender={handleGenderChange}
               server={server}
               setServer={setServer}
               searchQuery={searchQuery}
