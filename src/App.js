@@ -5,6 +5,7 @@ import SearchForm from './components/SearchForm';
 import SearchResults from './components/SearchResults';
 import SelectedItems from './components/SelectedItems';
 import ServerStatus from './components/ServerStatus';
+import FaceDownloader from './components/FaceDownloader';
 
 function App() {
   const [gender, setGender] = useState('f');
@@ -116,7 +117,10 @@ function App() {
   return (
     <div className="app">
       <div className="container">
-        <h1 className="title">🎮 Game Store Search</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+          <h1 className="title" style={{ margin: 0 }}>🎮 Game Store Search</h1>
+          <FaceDownloader />
+        </div>
         
         <ServerStatus 
           serverWakingUp={serverWakingUp} 
