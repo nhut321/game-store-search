@@ -237,7 +237,7 @@ export default function FaceDownloader() {
                 <input
                   type="text"
                   className="face-input"
-                  placeholder="Nhập tên (richy, Moon Cherub...) hoặc mã (mf_v0411, ff_v0287) rồi Enter"
+                  placeholder="Nhập tên mặt (richy, Moon...) hoặc mã (mf_v0411)..."
                   value={searchTerm}
                   onChange={handleInputChange}
                   onKeyDown={(e) => {

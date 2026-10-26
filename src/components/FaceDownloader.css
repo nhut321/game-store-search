@@ -48,6 +48,11 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-sizing: border-box;
+}
+
+.face-modal-content * {
+  box-sizing: border-box;
 }
 
 .face-modal-header {
@@ -92,18 +97,21 @@
 
 .face-search-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   position: relative;
   margin-bottom: 16px;
+  align-items: center;
+  width: 100%;
 }
 
 .face-gender-select {
+  flex-shrink: 0;
   background: #0f172a;
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 14px;
+  padding: 10px 12px;
+  font-size: 13px;
   outline: none;
   cursor: pointer;
   transition: border-color 0.2s;
@@ -116,10 +124,11 @@
 
 .face-input {
   flex: 1;
+  min-width: 0;
   background: #0f172a;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  padding: 12px 16px;
+  padding: 10px 14px;
   color: #fff;
   font-size: 14px;
   outline: none;
@@ -132,15 +141,20 @@
 }
 
 .face-search-btn {
+  flex-shrink: 0;
   background: #3b82f6;
   color: white;
   border: none;
-  padding: 12px 20px;
+  padding: 10px 18px;
   border-radius: 8px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   transition: background 0.2s;
 }
 
@@ -151,6 +165,15 @@
 .face-search-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .face-search-row {
+    flex-wrap: wrap;
+  }
+  .face-gender-select {
+    width: 100%;
+  }
 }
 
 .face-api-suggestions {
