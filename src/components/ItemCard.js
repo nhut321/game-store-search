@@ -10,7 +10,7 @@ function ItemCard({ item, onSelect, isSelected }) {
 
   const handleImageError = (e) => {
     // e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23f0f0f0" width="100" height="100"/%3E%3Ctext x="50" y="50" font-size="12" fill="%23999" text-anchor="middle" dy=".3em"%3EKhông ảnh%3C/text%3E%3C/svg%3E';
-        e.target.src = `https://cdn.aumix3d.com/previews/${item.fileName}_skin2.webp`
+        e.target.src = `https://cdn.aumix3d.com/previews/${item.fileName}_skin1.webp`
   };
 
   return (
