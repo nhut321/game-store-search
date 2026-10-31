@@ -1,4 +1,4 @@
-import { S3Client, ListObjectsV2Command, PutObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, ListObjectsV2Command, PutObjectCommand, HeadObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import axios from "axios";
 
 const ACCOUNT_ID = process.env.REACT_APP_R2_ACCOUNT_ID || "55f7283b0633f2f90ac189c982dbfa61";
@@ -309,6 +309,69 @@ export async function syncFacesFromCdnToR2(code, onProgress) {
   }
 
   return { items: results, isSingle: false };
+}
+
+/**
+ * Tải trực tiếp Blob ảnh mặt từ R2 S3 hoặc CDN fallback, đảm bảo không bị chặn CORS và tải thẳng về máy
+ * @param {string} key Ví dụ: textures/ff_s0215_006.png
+ * @param {string} [publicUrl] URL công khai
+ * @param {string} [filename] Tên file
+ * @returns {Promise<Blob>}
+ */
+export async function getFaceImageBlob(key, publicUrl, filename) {
+  // 1. Thử lấy trực tiếp từ S3 API của R2 (có CORS AllowedOrigins: [*])
+  if (key) {
+    try {
+      const res = await s3.send(
+        new GetObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: key,
+        })
+      );
+      if (res && res.Body) {
+        if (typeof res.Body.transformToByteArray === "function") {
+          const bytes = await res.Body.transformToByteArray();
+          return new Blob([bytes], { type: res.ContentType || "image/png" });
+        }
+        if (res.Body instanceof Blob) {
+          return res.Body;
+        }
+        if (typeof res.Body.blob === "function") {
+          return await res.Body.blob();
+        }
+      }
+    } catch (s3Err) {
+      console.warn("S3 GetObject thất bại, thử các cách fallback:", s3Err);
+    }
+  }
+
+  // 2. Thử fetch từ cdn.aumix3d.com nếu có tên file (CDN aumix3d có CORS)
+  const actualFileName = filename || (key ? key.split("/").pop() : null);
+  if (actualFileName) {
+    try {
+      const cdnUrl = `https://cdn.aumix3d.com/textures/${actualFileName}`;
+      const res = await fetch(cdnUrl);
+      if (res.ok) {
+        return await res.blob();
+      }
+    } catch (cdnErr) {
+      console.warn("CDN fetch thất bại, thử publicUrl fallback:", cdnErr);
+    }
+  }
+
+  // 3. Thử fetch từ publicUrl của R2
+  if (publicUrl) {
+    try {
+      const res = await fetch(publicUrl);
+      if (res.ok) {
+        return await res.blob();
+      }
+    } catch (urlErr) {
+      console.warn("PublicUrl fetch thất bại:", urlErr);
+    }
+  }
+
+  throw new Error("Không thể tải file ảnh.");
 }
 
 export { PUBLIC_URL, BUCKET_NAME };

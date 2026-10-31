@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
+import JSZip from "jszip";
 import "./FaceDownloader.css";
 import {
   checkFacesInR2,
   syncFacesFromCdnToR2,
   searchFacesByApi,
+  getFaceImageBlob,
   BUCKET_NAME,
 } from "../services/r2FaceService";
 
@@ -22,6 +24,8 @@ export default function FaceDownloader() {
   const [isSingleFace, setIsSingleFace] = useState(false); // "Nó chỉ có 1 mặt"
   const [errorMessage, setErrorMessage] = useState("");
   const [lightboxImg, setLightboxImg] = useState(null);
+  const [isZipping, setIsZipping] = useState(false);
+  const [zipProgressText, setZipProgressText] = useState("");
 
   // Animation preview
   const [animating, setAnimating] = useState(true);
@@ -155,10 +159,29 @@ export default function FaceDownloader() {
     }
   };
 
-  const handleDownloadSingle = async (url, filename) => {
+  const handleDownloadSingle = async (target, customFilename, optionalKey) => {
+    let key = optionalKey || "";
+    let url = "";
+    let filename = customFilename;
+
+    if (typeof target === "string") {
+      url = target;
+      if (!key && url.includes("/textures/")) {
+        key = "textures/" + url.split("/textures/")[1];
+      }
+      if (!filename) {
+        filename = key ? key.split("/").pop() : "face.png";
+      }
+    } else if (target && typeof target === "object") {
+      key = target.key || (target.url && target.url.includes("/textures/") ? "textures/" + target.url.split("/textures/")[1] : "");
+      url = target.url || "";
+      if (!filename) {
+        filename = `${currentCode}_${target.num || "001"}.png`;
+      }
+    }
+
     try {
-      const res = await fetch(url);
-      const blob = await res.blob();
+      const blob = await getFaceImageBlob(key, url, filename);
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = blobUrl;
@@ -166,18 +189,59 @@ export default function FaceDownloader() {
       document.body.appendChild(a);
       a.click();
       a.remove();
-      URL.revokeObjectURL(blobUrl);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
     } catch (e) {
+      console.error("Không thể tải file ảnh trực tiếp:", e);
       window.open(url, "_blank");
     }
   };
 
   const handleDownloadAll = async () => {
-    for (let i = 0; i < faceImages.length; i++) {
-      const item = faceImages[i];
-      const filename = `${currentCode}_${item.num}.png`;
-      await handleDownloadSingle(item.url, filename);
-      await new Promise((r) => setTimeout(r, 150));
+    if (faceImages.length === 0 || isZipping) return;
+
+    // Nếu chỉ có 1 mặt, tải thẳng file PNG luôn cho nhanh gọn
+    if (faceImages.length === 1) {
+      const item = faceImages[0];
+      const filename = `${currentCode}_${item.num || "001"}.png`;
+      await handleDownloadSingle(item, filename, item.key);
+      return;
+    }
+
+    setIsZipping(true);
+    setZipProgressText("Đang chuẩn bị...");
+
+    try {
+      const zip = new JSZip();
+
+      for (let i = 0; i < faceImages.length; i++) {
+        const item = faceImages[i];
+        const filename = `${currentCode}_${item.num}.png`;
+        setZipProgressText(`Đang tải ${i + 1}/${faceImages.length}...`);
+
+        const blob = await getFaceImageBlob(item.key, item.url, filename);
+        zip.file(filename, blob);
+      }
+
+      setZipProgressText("Đang nén ZIP...");
+      const zipBlob = await zip.generateAsync({ type: "blob" }, (metadata) => {
+        setZipProgressText(`Đang nén ${Math.round(metadata.percent)}%...`);
+      });
+
+      const zipFilename = `${currentCode}_faces.zip`;
+      const blobUrl = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = zipFilename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+    } catch (err) {
+      console.error("Lỗi khi tạo file zip:", err);
+      alert("Đã xảy ra lỗi khi tạo file zip: " + (err.message || err));
+    } finally {
+      setIsZipping(false);
+      setZipProgressText("");
     }
   };
 
@@ -397,13 +461,19 @@ export default function FaceDownloader() {
                         className="face-btn-mini"
                         style={{
                           padding: "6px 14px",
-                          background: "#10b981",
+                          background: isZipping ? "#64748b" : "#10b981",
                           color: "#fff",
                           fontWeight: "600",
+                          cursor: isZipping ? "not-allowed" : "pointer",
                         }}
                         onClick={handleDownloadAll}
+                        disabled={isZipping}
                       >
-                        📥 Tải {faceImages.length} Mặt
+                        {isZipping
+                          ? `⏳ ${zipProgressText}`
+                          : faceImages.length > 1
+                          ? `📦 Tải ZIP (${faceImages.length} Mặt)`
+                          : `📥 Tải 1 Mặt`}
                       </button>
                     </div>
                   </div>
@@ -511,8 +581,9 @@ export default function FaceDownloader() {
                             className="face-btn-mini download"
                             onClick={() =>
                               handleDownloadSingle(
-                                imgItem.url,
-                                `${currentCode}_${imgItem.num}.png`
+                                imgItem,
+                                `${currentCode}_${imgItem.num}.png`,
+                                imgItem.key
                               )
                             }
                             title="Tải PNG về máy"
